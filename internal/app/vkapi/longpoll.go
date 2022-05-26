@@ -13,10 +13,10 @@ const (
 )
 
 type Longpoll struct {
-	Key    string
-	Server string
-	Ts     string
-	Wait   string
+	Params      url.Values
+	Server      string
+	LastEvent   chan LongpollMessage
+	LastMessage chan Message
 }
 
 func NewLongpoll(api *Api, groupID int) (*Longpoll, error) {
@@ -28,22 +28,21 @@ func NewLongpoll(api *Api, groupID int) (*Longpoll, error) {
 		return nil, err
 	}
 	strWait := strconv.Itoa(baseLongpollWait)
+	urlParams := url.Values{}
+	urlParams.Add("act", "a_check")
+	urlParams.Add("ts", r.Response.Ts)
+	urlParams.Add("key", r.Response.Key)
+	urlParams.Add("wait", strWait)
 	return &Longpoll{
-		Key:    r.Response.Key,
-		Server: r.Response.Server,
-		Ts:     r.Response.Ts,
-		Wait:   strWait,
+		Params:      urlParams,
+		Server:      r.Response.Server,
+		LastEvent:   make(chan LongpollMessage),
+		LastMessage: make(chan Message),
 	}, nil
 }
 
 func (lp *Longpoll) Request() (*LongpollResponse, error) {
-	urlParams := url.Values{}
-	urlParams.Add("act", "a_check")
-	urlParams.Add("ts", lp.Ts)
-	urlParams.Add("key", lp.Key)
-	urlParams.Add("wait", lp.Wait)
-
-	response, err := http.PostForm(lp.Server, urlParams)
+	response, err := http.PostForm(lp.Server, lp.Params)
 	if err != nil {
 		return nil, err
 	}
@@ -54,12 +53,12 @@ func (lp *Longpoll) Request() (*LongpollResponse, error) {
 		return nil, err
 	}
 
-	lp.Ts = r.Ts
+	lp.Params.Set("ts", r.Ts)
 
 	return r, nil
 }
 
-func (lp *Longpoll) ListenNewMessages(message chan Message) {
+func (lp *Longpoll) ListenNewMessages() {
 	for {
 		event, err := lp.Request()
 		if err != nil {
@@ -75,7 +74,9 @@ func (lp *Longpoll) ListenNewMessages(message chan Message) {
 				if err := json.Unmarshal(jsonString, &m); err != nil {
 					log.Fatal(err)
 				}
-				message <- m.CurrentMessage
+				lp.LastMessage <- m.CurrentMessage
+			} else {
+				lp.LastEvent <- update
 			}
 		}
 	}

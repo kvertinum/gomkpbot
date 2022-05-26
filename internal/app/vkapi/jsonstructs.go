@@ -20,7 +20,7 @@ type Message struct {
 	ReplyMessage          *Message      `json:"reply_message"`
 	Important             bool          `json:"important"`
 	RandomID              int           `json:"random_id"`
-	Attachments           []interface{} `json:"attachments"`
+	Attachments           []Attachments `json:"attachments"`
 	IsHidden              bool          `json:"is_hidden"`
 }
 
@@ -37,4 +37,21 @@ type LongpollMessage struct {
 type LongpollResponse struct {
 	Ts      string            `json:"ts"`
 	Updates []LongpollMessage `json:"updates"`
+}
+
+type Attachments struct {
+	Photo struct {
+		AlbumID int  `json:"album_id"`
+		Date    int  `json:"date"`
+		HasTags bool `json:"has_tags"`
+		ID      int  `json:"id"`
+		OwnerID int  `json:"owner_id"`
+		Sizes   []struct {
+			Height int    `json:"height"`
+			Type   string `json:"type"`
+			Url    string `json:"url"`
+		} `json:"sizes"`
+		Text string `json:"text"`
+	} `json:"photo"`
+	Type string `json:"type"`
 }

@@ -32,22 +32,22 @@ func (api *Api) Method(methodName string, params map[string]interface{}, respons
 	params["v"] = api.Version
 
 	urlParams := url.Values{}
-	for k, v := range params {
+	for key, value := range params {
 		var strValue string
-		switch t := v.(type) {
+		switch t := value.(type) {
 		case string:
-			strValue = v.(string)
+			strValue = value.(string)
 		case int:
-			strValue = strconv.Itoa(v.(int))
+			strValue = strconv.Itoa(value.(int))
 		default:
-			byteValue, err := json.Marshal(v)
+			byteValue, err := json.Marshal(value)
 			if err != nil {
-				log.Printf("Unknown %v type\n", t)
+				log.Printf("Bad type %v\n", t)
 				return err
 			}
 			strValue = string(byteValue)
 		}
-		urlParams.Add(k, strValue)
+		urlParams.Add(key, strValue)
 	}
 
 	apiAnswer, err := http.PostForm(api.Url+methodName, urlParams)
