@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
-	"net/url"
 	"strconv"
 )
 
@@ -31,7 +30,8 @@ func (api *Api) Method(methodName string, params map[string]interface{}, respons
 	params["access_token"] = api.Token
 	params["v"] = api.Version
 
-	urlParams := url.Values{}
+	// urlParams := url.Values{}
+	strParams := "?"
 	for key, value := range params {
 		var strValue string
 		switch t := value.(type) {
@@ -47,10 +47,14 @@ func (api *Api) Method(methodName string, params map[string]interface{}, respons
 			}
 			strValue = string(byteValue)
 		}
-		urlParams.Add(key, strValue)
+		//urlParams.Add(key, strValue)
+		strParams += key + "=" + strValue + "&"
 	}
 
-	apiAnswer, err := http.PostForm(api.Url+methodName, urlParams)
+	//apiAnswer, err := http.PostForm(api.Url+methodName, urlParams)
+
+	// Using GET method for better perfomance
+	apiAnswer, err := http.Get(api.Url + methodName + strParams)
 	if err != nil {
 		return err
 	}
