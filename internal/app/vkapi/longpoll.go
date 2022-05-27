@@ -28,11 +28,13 @@ func NewLongpoll(api *Api, groupID int) (*Longpoll, error) {
 		return nil, err
 	}
 	strWait := strconv.Itoa(baseLongpollWait)
+
 	urlParams := url.Values{}
 	urlParams.Add("act", "a_check")
 	urlParams.Add("ts", r.Response.Ts)
 	urlParams.Add("key", r.Response.Key)
 	urlParams.Add("wait", strWait)
+
 	return &Longpoll{
 		Params:      urlParams,
 		Server:      r.Response.Server,

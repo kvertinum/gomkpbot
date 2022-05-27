@@ -22,6 +22,10 @@ type Message struct {
 	RandomID              int           `json:"random_id"`
 	Attachments           []Attachments `json:"attachments"`
 	IsHidden              bool          `json:"is_hidden"`
+	Action                *struct {
+		MemberID int    `json:"member_id"`
+		Type     string `json:"type"`
+	} `json:"action"`
 }
 
 type MessageJson struct {
