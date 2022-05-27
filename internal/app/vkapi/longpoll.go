@@ -3,7 +3,6 @@ package vkapi
 import (
 	"encoding/json"
 	"log"
-	"net/http"
 	"net/url"
 	"strconv"
 )
@@ -13,6 +12,7 @@ const (
 )
 
 type Longpoll struct {
+	Api         *Api
 	Params      url.Values
 	Server      string
 	LastEvent   chan LongpollMessage
@@ -36,6 +36,7 @@ func NewLongpoll(api *Api, groupID int) (*Longpoll, error) {
 	urlParams.Add("wait", strWait)
 
 	return &Longpoll{
+		Api:         api,
 		Params:      urlParams,
 		Server:      r.Response.Server,
 		LastEvent:   make(chan LongpollMessage),
@@ -44,14 +45,9 @@ func NewLongpoll(api *Api, groupID int) (*Longpoll, error) {
 }
 
 func (lp *Longpoll) Request() (*LongpollResponse, error) {
-	response, err := http.PostForm(lp.Server, lp.Params)
-	if err != nil {
-		return nil, err
-	}
-	defer response.Body.Close()
-
 	r := &LongpollResponse{}
-	if err := json.NewDecoder(response.Body).Decode(&r); err != nil {
+	err := lp.Api.Post(lp.Server, []byte(lp.Params.Encode()), &r)
+	if err != nil {
 		return nil, err
 	}
 

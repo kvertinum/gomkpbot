@@ -2,10 +2,10 @@ package vkapi
 
 import (
 	"encoding/json"
+	"log"
+	"net/url"
+	"strconv"
 	"time"
-
-	// "log"
-	// "strconv"
 
 	"github.com/valyala/fasthttp"
 )
@@ -28,9 +28,10 @@ func NewApi(token string) *Api {
 		Url:     baseApiUrl,
 		Version: baseApiVersion,
 		Client: &fasthttp.Client{
-			ReadTimeout:         5 * time.Second,
-			WriteTimeout:        5 * time.Second,
-			MaxIdleConnDuration: time.Minute,
+			ReadTimeout:              5 * time.Second,
+			WriteTimeout:             5 * time.Second,
+			MaxIdleConnDuration:      time.Minute,
+			NoDefaultUserAgentHeader: true,
 		},
 	}
 }
@@ -39,59 +40,49 @@ func (api *Api) Method(methodName string, params map[string]interface{}, respons
 	params["access_token"] = api.Token
 	params["v"] = api.Version
 
-	reqEntityBytes, err := json.Marshal(params)
-	if err != nil {
-		return err
+	urlParams := url.Values{}
+	for key, value := range params {
+		var strValue string
+		switch t := value.(type) {
+		case string:
+			strValue = value.(string)
+		case int:
+			strValue = strconv.Itoa(value.(int))
+		default:
+			byteValue, err := json.Marshal(value)
+			if err != nil {
+				log.Printf("Bad type %v\n", t)
+				return err
+			}
+			strValue = string(byteValue)
+		}
+		urlParams.Add(key, strValue)
 	}
-	reqUrl := api.Url + methodName
 
+	urlEncoded := urlParams.Encode()
+	reqEntityBytes := []byte(urlEncoded)
+
+	return api.Post(
+		api.Url+methodName, reqEntityBytes, response,
+	)
+}
+
+func (api *Api) Post(url string, params []byte, response interface{}) error {
 	req := fasthttp.AcquireRequest()
 	resp := fasthttp.AcquireResponse()
 	defer fasthttp.ReleaseRequest(req)
 	defer fasthttp.ReleaseResponse(resp)
 
 	req.Header.SetMethod("POST")
-	req.Header.SetContentType("application/json")
-	req.SetRequestURI(reqUrl)
-	req.SetBody(reqEntityBytes)
+	req.Header.SetContentType("application/x-www-form-urlencoded")
+	req.SetRequestURI(url)
+	req.SetBody(params)
 
 	api.Client.Do(req, resp)
 
+	if response == nil {
+		return nil
+	}
+
 	return json.Unmarshal(resp.Body(), response)
-
-	// urlParams := url.Values{}
-	// strParams := "?"
-	// for key, value := range params {
-	// 	var strValue string
-	// 	switch t := value.(type) {
-	// 	case string:
-	// 		strValue = value.(string)
-	// 	case int:
-	// 		strValue = strconv.Itoa(value.(int))
-	// 	default:
-	// 		byteValue, err := json.Marshal(value)
-	// 		if err != nil {
-	// 			log.Printf("Bad type %v\n", t)
-	// 			return err
-	// 		}
-	// 		strValue = string(byteValue)
-	// 	}
-	// 	// urlParams.Add(key, strValue)
-	// 	strParams += key + "=" + strValue + "&"
-	// }
-
-	//apiAnswer, err := http.PostForm(api.Url+methodName, urlParams)
-
-	// Using GET method for better perfomance
-	//apiAnswer, err := http.Get(api.Url + methodName + strParams)
-	// if err != nil {
-	// 	return err
-	// }
-	// defer apiAnswer.Body.Close()
-
-	// if response == nil {
-	// 	return nil
-	// }
-
-	// return json.NewDecoder(apiAnswer.Body).Decode(response)
 }
