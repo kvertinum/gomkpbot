@@ -4,6 +4,7 @@
 
 > Fast golang vk bot
 
+## Setup
 ```shell
 make
 ./bot
