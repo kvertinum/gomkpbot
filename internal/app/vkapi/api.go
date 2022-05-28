@@ -79,10 +79,11 @@ func (api *Api) Post(url string, params []byte, response interface{}) error {
 	req.SetBody(params)
 
 	api.Client.Do(req, resp)
+	body := resp.Body()
 
-	if response == nil {
+	if response == nil || len(body) == 0 {
 		return nil
 	}
 
-	return json.Unmarshal(resp.Body(), response)
+	return json.Unmarshal(body, response)
 }
