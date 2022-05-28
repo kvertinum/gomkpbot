@@ -51,6 +51,10 @@ func (lp *Longpoll) Request() (*LongpollResponse, error) {
 		return nil, err
 	}
 
+	if r.Ts == "" {
+		return nil, nil
+	}
+
 	lp.Params.Set("ts", r.Ts)
 
 	return r, nil
@@ -61,6 +65,9 @@ func (lp *Longpoll) ListenNewMessages() {
 		event, err := lp.Request()
 		if err != nil {
 			log.Fatal(err)
+		}
+		if event == nil {
+			continue
 		}
 		for _, update := range event.Updates {
 			if update.Type == "message_new" {

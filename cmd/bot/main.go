@@ -5,6 +5,7 @@ import (
 	"log"
 
 	"github.com/BurntSushi/toml"
+	"github.com/Kvertinum01/gomkpbot/internal/app/store"
 	"github.com/Kvertinum01/gomkpbot/internal/app/vkbot"
 )
 
@@ -19,7 +20,7 @@ func init() {
 func main() {
 	flag.Parse()
 
-	config := &vkbot.Config{}
+	config := &vkbot.Config{Store: store.NewConfig()}
 	_, err := toml.DecodeFile(configPath, config)
 	if err != nil {
 		log.Fatal(err)
