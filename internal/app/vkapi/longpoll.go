@@ -12,11 +12,11 @@ const (
 )
 
 type Longpoll struct {
-	Api         *Api
-	Params      url.Values
-	Server      string
-	LastEvent   chan LongpollMessage
-	LastMessage chan Message
+	Api        *Api
+	Params     url.Values
+	Server     string
+	NewEvent   chan LongpollMessage
+	NewMessage chan Message
 }
 
 func NewLongpoll(api *Api, groupID int) (*Longpoll, error) {
@@ -36,11 +36,11 @@ func NewLongpoll(api *Api, groupID int) (*Longpoll, error) {
 	urlParams.Add("wait", strWait)
 
 	return &Longpoll{
-		Api:         api,
-		Params:      urlParams,
-		Server:      r.Response.Server,
-		LastEvent:   make(chan LongpollMessage),
-		LastMessage: make(chan Message),
+		Api:        api,
+		Params:     urlParams,
+		Server:     r.Response.Server,
+		NewEvent:   make(chan LongpollMessage),
+		NewMessage: make(chan Message),
 	}, nil
 }
 
@@ -79,9 +79,9 @@ func (lp *Longpoll) ListenNewMessages() {
 				if err := json.Unmarshal(jsonString, &m); err != nil {
 					log.Fatal(err)
 				}
-				lp.LastMessage <- m.CurrentMessage
+				lp.NewMessage <- m.CurrentMessage
 			} else {
-				lp.LastEvent <- update
+				lp.NewEvent <- update
 			}
 		}
 	}
