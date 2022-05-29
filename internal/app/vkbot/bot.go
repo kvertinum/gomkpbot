@@ -1,9 +1,6 @@
 package vkbot
 
 import (
-	"fmt"
-	"log"
-
 	"github.com/Kvertinum01/gomkpbot/internal/app/store"
 	"github.com/Kvertinum01/gomkpbot/internal/app/vkapi"
 )
@@ -13,7 +10,6 @@ type Bot struct {
 	store   *store.Store
 	config  *Config
 	groupID int
-	mention string
 }
 
 func SetupBot(config *Config) error {
@@ -22,10 +18,6 @@ func SetupBot(config *Config) error {
 		api:     api,
 		groupID: config.GroupID,
 		config:  config,
-		mention: fmt.Sprintf(
-			"[club%v|@%s] ",
-			config.GroupID, config.StrGroupID,
-		),
 	}
 	lp, err := vkapi.NewLongpoll(api, config.GroupID)
 	if err != nil {
@@ -59,14 +51,6 @@ func (bot *Bot) configureStore() error {
 }
 
 func (bot *Bot) checkMessage(message vkapi.Message) {
-	if message.Action != nil {
-		if message.Action.Type == "chat_invite_user" && message.Action.MemberID == -bot.groupID {
-			if err := bot.send(message.PeerID, helloMessage); err != nil {
-				log.Fatal(err)
-			}
-			return
-		}
-	}
 	if message.PeerID >= 2000000000 {
 		bot.checkChat(message)
 	}
