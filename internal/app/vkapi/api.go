@@ -23,6 +23,7 @@ type Api struct {
 }
 
 func NewApi(token string) *Api {
+	// Init Api struct
 	return &Api{
 		Token:   token,
 		Url:     baseApiUrl,
@@ -37,6 +38,7 @@ func NewApi(token string) *Api {
 }
 
 func (api *Api) Method(methodName string, params map[string]interface{}, response interface{}) error {
+	// Call to vk api method
 	params["access_token"] = api.Token
 	params["v"] = api.Version
 
@@ -68,6 +70,7 @@ func (api *Api) Method(methodName string, params map[string]interface{}, respons
 }
 
 func (api *Api) Post(url string, params []byte, response interface{}) error {
+	// Create POST request
 	req := fasthttp.AcquireRequest()
 	resp := fasthttp.AcquireResponse()
 	defer fasthttp.ReleaseRequest(req)

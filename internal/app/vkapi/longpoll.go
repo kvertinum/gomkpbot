@@ -20,6 +20,7 @@ type Longpoll struct {
 }
 
 func NewLongpoll(api *Api, groupID int) (*Longpoll, error) {
+	// Getting longpoll server and configs
 	r := ResponseInit{}
 	err := api.Method("groups.getLongPollServer", map[string]interface{}{
 		"group_id": groupID,
@@ -27,14 +28,18 @@ func NewLongpoll(api *Api, groupID int) (*Longpoll, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	// Convert LongpollWait value to string
 	strWait := strconv.Itoa(baseLongpollWait)
 
+	// Create url values
 	urlParams := url.Values{}
 	urlParams.Add("act", "a_check")
 	urlParams.Add("ts", r.Response.Ts)
 	urlParams.Add("key", r.Response.Key)
 	urlParams.Add("wait", strWait)
 
+	// Init Longpoll struct
 	return &Longpoll{
 		Api:        api,
 		Params:     urlParams,
@@ -45,6 +50,7 @@ func NewLongpoll(api *Api, groupID int) (*Longpoll, error) {
 }
 
 func (lp *Longpoll) Request() (*LongpollResponse, error) {
+	// Create request to longpoll
 	r := &LongpollResponse{}
 	err := lp.Api.Post(lp.Server, []byte(lp.Params.Encode()), &r)
 	if err != nil {
@@ -61,7 +67,9 @@ func (lp *Longpoll) Request() (*LongpollResponse, error) {
 }
 
 func (lp *Longpoll) ListenNewMessages() {
+	// Listen new longpoll events
 	for {
+		// Create request
 		event, err := lp.Request()
 		if err != nil {
 			log.Fatal(err)
@@ -69,8 +77,10 @@ func (lp *Longpoll) ListenNewMessages() {
 		if event == nil {
 			continue
 		}
+		// Check updates
 		for _, update := range event.Updates {
 			if update.Type == "message_new" {
+				// Init MessageJson struct
 				m := MessageJson{}
 				jsonString, err := json.Marshal(update.Object)
 				if err != nil {
@@ -79,8 +89,10 @@ func (lp *Longpoll) ListenNewMessages() {
 				if err := json.Unmarshal(jsonString, &m); err != nil {
 					log.Fatal(err)
 				}
+				// Write message to lp.NewMessage
 				lp.NewMessage <- m.CurrentMessage
 			} else {
+				// Write event to lp.NewEvent
 				lp.NewEvent <- update
 			}
 		}
