@@ -16,12 +16,14 @@ type Route struct {
 }
 
 func (r *Route) helpCmd() {
+	// Answer to "/help"
 	if err := r.bot.send(r.message.PeerID, helpMessage); err != nil {
 		log.Fatal(err)
 	}
 }
 
 func (r *Route) statCmd() {
+	// Answer to "/stat"
 	if err := r.bot.send(r.message.PeerID, fmt.Sprintf(
 		"Имя: %s\nПобеды: %v\nПоражения: %v",
 		r.userModel.UserName, r.userModel.Wins, r.userModel.Loses,
@@ -31,13 +33,19 @@ func (r *Route) statCmd() {
 }
 
 func (r *Route) duelCmd() {
+	// Answer to "/duek"
 	if r.cmdValues != nil {
 
 	} else {
-		if err := r.bot.send(
-			r.message.PeerID, "Эта команда требуег аргументов",
-		); err != nil {
-			log.Fatal(err)
-		}
+		r.sendNeedArgs()
+	}
+}
+
+func (r *Route) sendNeedArgs() {
+	// Answer when using the command incorrectly
+	if err := r.bot.send(
+		r.message.PeerID, "Эта команда требуег аргументов",
+	); err != nil {
+		log.Fatal(err)
 	}
 }

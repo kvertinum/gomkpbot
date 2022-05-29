@@ -13,12 +13,14 @@ type Store struct {
 }
 
 func New(config *Config) *Store {
+	// Iinit Store struct
 	return &Store{
 		config: config,
 	}
 }
 
 func (s *Store) Open() error {
+	// Open store
 	db, err := sql.Open("postgres", s.config.DatabaseURL)
 	if err != nil {
 		return err
@@ -34,10 +36,12 @@ func (s *Store) Open() error {
 }
 
 func (s *Store) Close() {
+	// Close store
 	s.db.Close()
 }
 
 func (s *Store) User() *UserRepository {
+	// Returns userTrpository to outside
 	if s.userRepository == nil {
 		s.userRepository = &UserRepository{store: s}
 	}

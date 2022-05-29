@@ -65,6 +65,7 @@ func (bot *Bot) checkChat(message vkapi.Message) {
 }
 
 func (bot *Bot) checkDbErr(err error, userID int, peerID int) (*models.User, error) {
+	// Create user if not exists
 	if err == sql.ErrNoRows {
 		model := &models.User{
 			UserID:   userID,

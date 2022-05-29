@@ -13,25 +13,32 @@ type Bot struct {
 }
 
 func SetupBot(config *Config) error {
+	// Init Api struct
 	api := vkapi.NewApi(config.Token)
+	// Init Bot struct
 	bot := &Bot{
 		api:     api,
 		groupID: config.GroupID,
 		config:  config,
 	}
+	// Init Longpoll struct
 	lp, err := vkapi.NewLongpoll(api, config.GroupID)
 	if err != nil {
 		return err
 	}
 
+	// Configure store
 	if err := bot.configureStore(); err != nil {
 		return err
 	}
 
+	// Start listening messages
 	go lp.ListenNewMessages()
 
+	// Start infinite loop
 	for {
 		select {
+		// Waiting message or event
 		case message := <-lp.NewMessage:
 			go bot.checkMessage(message)
 		case event := <-lp.NewEvent:
@@ -41,6 +48,7 @@ func SetupBot(config *Config) error {
 }
 
 func (bot *Bot) configureStore() error {
+	// Create and check store
 	st := store.New(bot.config.Store)
 	if err := st.Open(); err != nil {
 		return err
