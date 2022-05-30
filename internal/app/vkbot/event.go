@@ -95,10 +95,13 @@ func (bot *Bot) checkMessageEvent(m *MessageEvent) error {
 		duel.Ways += 1
 
 		if duel.Ways == 2 {
+			if err := bot.sendAnswer(m, "Дуэль закончилась!"); err != nil {
+				return err
+			}
+			delete(bot.duels, intDuelID)
 			// Finish game
 			firstMemberID := duel.NowWay
 			secondMemberID := duel.AnotherMember
-			log.Println(firstMemberID, secondMemberID)
 			firstMember := duel.Members[firstMemberID]
 			secondMember := duel.Members[secondMemberID]
 			if firstMember.Attack != secondMember.Protect {
@@ -113,6 +116,11 @@ func (bot *Bot) checkMessageEvent(m *MessageEvent) error {
 			}
 			if firstMember.IsWin {
 				// Win first member
+				if err := bot.store.User().WinByID(
+					firstMemberID, secondMemberID,
+				); err != nil {
+					return err
+				}
 				answer := fmt.Sprintf(
 					"Победил: @id%v", firstMemberID,
 				)
@@ -120,6 +128,11 @@ func (bot *Bot) checkMessageEvent(m *MessageEvent) error {
 			}
 			if secondMember.IsWin {
 				// Win second member
+				if err := bot.store.User().WinByID(
+					secondMemberID, firstMemberID,
+				); err != nil {
+					return err
+				}
 				answer := fmt.Sprintf(
 					"Победил: @id%v", secondMemberID,
 				)
@@ -135,7 +148,7 @@ func (bot *Bot) checkMessageEvent(m *MessageEvent) error {
 		if err != nil {
 			log.Fatal(err)
 		}
-		answer := fmt.Sprintf("Вы защитились, теперь атакует: @id%v", m.UserID)
+		answer := fmt.Sprintf("Вы защитились, теперь атакует: @id%v", duel.NowWay)
 		if err := bot.sendAnswer(m, "Вы походили!"); err != nil {
 			return err
 		}
@@ -155,7 +168,7 @@ func (bot *Bot) sendAnswer(m *MessageEvent, event_data string) error {
 		"event_id":   m.EventID,
 		"user_id":    m.UserID,
 		"peer_id":    m.PeerID,
-		"event_data": showSnackbar("test"),
+		"event_data": showSnackbar(event_data),
 	}, nil)
 }
 

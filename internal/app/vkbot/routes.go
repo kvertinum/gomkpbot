@@ -124,7 +124,7 @@ func (r *Route) duelCmd() {
 func (r *Route) sendNeedArgs() {
 	// Answer when using the command incorrectly
 	if err := r.bot.send(
-		r.message.PeerID, "Эта команда требудет аргументов",
+		r.message.PeerID, "Эта команда требует аргументов",
 	); err != nil {
 		log.Fatal(err)
 	}
