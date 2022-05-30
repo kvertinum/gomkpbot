@@ -1,15 +1,18 @@
 package vkbot
 
 import (
+	"github.com/Kvertinum01/gomkpbot/internal/app/duel"
 	"github.com/Kvertinum01/gomkpbot/internal/app/store"
 	"github.com/Kvertinum01/gomkpbot/internal/app/vkapi"
 )
 
 type Bot struct {
-	api     *vkapi.Api
-	store   *store.Store
-	config  *Config
-	groupID int
+	api      *vkapi.Api
+	store    *store.Store
+	config   *Config
+	groupID  int
+	duels    map[int]*duel.Duel
+	waitDuel map[int]int
 }
 
 func SetupBot(config *Config) error {
@@ -17,9 +20,11 @@ func SetupBot(config *Config) error {
 	api := vkapi.NewApi(config.Token)
 	// Init Bot struct
 	bot := &Bot{
-		api:     api,
-		groupID: config.GroupID,
-		config:  config,
+		api:      api,
+		groupID:  config.GroupID,
+		config:   config,
+		duels:    make(map[int]*duel.Duel),
+		waitDuel: make(map[int]int),
 	}
 	// Init Longpoll struct
 	lp, err := vkapi.NewLongpoll(api, config.GroupID)
@@ -62,10 +67,6 @@ func (bot *Bot) checkMessage(message vkapi.Message) {
 	if message.PeerID >= 2000000000 {
 		bot.checkChat(message)
 	}
-}
-
-func (bot *Bot) checkEvent(event vkapi.LongpollMessage) {
-	// In dev
 }
 
 func (bot *Bot) send(peerID int, message string) error {

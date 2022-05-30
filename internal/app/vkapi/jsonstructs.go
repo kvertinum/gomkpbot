@@ -14,6 +14,7 @@ type Message struct {
 	ID                    int           `json:"id"`
 	Out                   int           `json:"out"`
 	PeerID                int           `json:"peer_id"`
+	Payload               string        `json:"payload"`
 	Text                  string        `json:"text"`
 	ConversationMessageID int           `json:"conversation_message_id"`
 	FwdMessages           []*Message    `json:"fwd_messages"`

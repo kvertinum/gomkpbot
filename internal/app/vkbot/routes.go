@@ -3,9 +3,16 @@ package vkbot
 import (
 	"fmt"
 	"log"
+	"regexp"
+	"strconv"
+	"time"
 
 	"github.com/Kvertinum01/gomkpbot/internal/app/models"
 	"github.com/Kvertinum01/gomkpbot/internal/app/vkapi"
+)
+
+const (
+	waitDuelMsg = "Вы вызвали соперника на дуэль"
 )
 
 type Route struct {
@@ -33,9 +40,82 @@ func (r *Route) statCmd() {
 }
 
 func (r *Route) duelCmd() {
-	// Answer to "/duek"
+	// Answer to "/duel"
 	if r.cmdValues != nil {
+		// Create regex
+		re := regexp.MustCompile(`\[id(\d+)\|.+\]`)
+		res := re.FindStringSubmatch(r.cmdValues[0])
+		if len(res) < 2 {
+			r.sendNeedArgs()
+			return
+		}
 
+		// Convert to int
+		strUserID := res[1]
+		userID, err := strconv.Atoi(strUserID)
+		if err != nil {
+			r.sendNeedArgs()
+			return
+		}
+
+		// Check user id
+		if userID == r.message.FromID {
+			if err := r.bot.send(
+				r.message.PeerID, "Вы не можете вызать на дуэль себя",
+			); err != nil {
+				log.Fatal(err)
+			}
+			return
+		}
+
+		// Add to waiting
+		r.bot.waitDuel[userID] = r.message.FromID
+
+		// Start timer
+		go func(userID int, waitUserID, peerID int) {
+			timer := time.NewTimer(time.Minute)
+			for range timer.C {
+				_, ok := r.bot.waitDuel[waitUserID]
+				if !ok {
+					return
+				}
+				delete(r.bot.waitDuel, waitUserID)
+				message := fmt.Sprintf(
+					"@id%v, пользователь @id%v не принял дуэль в течении минуты и она отменяется",
+					userID, waitUserID,
+				)
+				if err := r.bot.send(peerID, message); err != nil {
+					log.Fatal(err)
+				}
+			}
+		}(
+			r.message.FromID,
+			userID,
+			r.message.PeerID,
+		)
+
+		// Create keyboard object
+		k := vkapi.NewKeyboard(false, true)
+		k.Add(vkapi.NewTextButton(
+			"Принять",
+			"{\"cmd\": \"accept_duel\"}",
+			"negative",
+		))
+		k.NewLine()
+		kjson, err := k.GetJson()
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		// Send answer
+		if err := r.bot.api.Method("messages.send", map[string]interface{}{
+			"peer_id":   r.message.PeerID,
+			"random_id": 0,
+			"message":   waitDuelMsg,
+			"keyboard":  kjson,
+		}, nil); err != nil {
+			log.Fatal(err)
+		}
 	} else {
 		r.sendNeedArgs()
 	}
@@ -44,7 +124,7 @@ func (r *Route) duelCmd() {
 func (r *Route) sendNeedArgs() {
 	// Answer when using the command incorrectly
 	if err := r.bot.send(
-		r.message.PeerID, "Эта команда требуег аргументов",
+		r.message.PeerID, "Эта команда требудет аргументов",
 	); err != nil {
 		log.Fatal(err)
 	}

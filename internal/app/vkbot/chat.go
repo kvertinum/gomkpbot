@@ -2,6 +2,7 @@ package vkbot
 
 import (
 	"database/sql"
+	"encoding/json"
 	"log"
 	"strings"
 
@@ -18,7 +19,7 @@ const (
 )
 
 func (bot *Bot) checkChat(message vkapi.Message) {
-	// Catch the bot's join into the chat
+	// Catch bot's join into the chat
 	if message.Action != nil {
 		if message.Action.Type == "chat_invite_user" && message.Action.MemberID == -bot.groupID {
 			if err := bot.send(message.PeerID, helloMessage); err != nil {
@@ -35,6 +36,23 @@ func (bot *Bot) checkChat(message vkapi.Message) {
 		if err != nil {
 			log.Fatal(err)
 		}
+	}
+
+	// Check payload
+	if message.Payload != "" {
+		var payload map[string]string
+		if err := json.Unmarshal(
+			[]byte(message.Payload), &payload,
+		); err != nil {
+			log.Fatal(err)
+		}
+		p := &PayloadRoute{
+			bot:     bot,
+			message: message,
+			payload: payload,
+		}
+		p.checkPayload()
+		return
 	}
 
 	// Parse message
