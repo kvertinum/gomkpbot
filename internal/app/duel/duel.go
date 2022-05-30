@@ -3,10 +3,11 @@ package duel
 import "github.com/Kvertinum01/gomkpbot/internal/app/models"
 
 type Member struct {
-	Attack  int
-	Protect int
-	IsWin   bool
-	Model   *models.User
+	Attacked bool
+	Attack   int
+	Protect  int
+	IsWin    bool
+	Model    *models.User
 }
 
 type Duel struct {

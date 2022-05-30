@@ -70,6 +70,9 @@ func (bot *Bot) checkMessageEvent(m *MessageEvent) error {
 
 	switch duelType {
 	case "attack":
+		if duel.Members[m.UserID].Attacked {
+			return nil
+		}
 		// Do attack
 		duel.Members[m.UserID].Attack = intWay
 
@@ -79,6 +82,8 @@ func (bot *Bot) checkMessageEvent(m *MessageEvent) error {
 		}
 
 		model := duel.Members[m.UserID].Model
+
+		duel.Members[m.UserID].Attacked = true
 
 		answer := fmt.Sprintf(
 			"[id%v|%s], вы атаковали. Что будете защищать:",
@@ -158,6 +163,8 @@ func (bot *Bot) checkMessageEvent(m *MessageEvent) error {
 		duel.NowWay = duel.AnotherMember
 		duel.AnotherMember = m.UserID
 		model := duel.Members[duel.NowWay].Model
+
+		duel.Members[m.UserID].Attacked = false
 
 		kjson, err := createAttackKeyboard(intDuelID)
 		if err != nil {
