@@ -29,6 +29,7 @@ func (r *UserRepository) FindByID(userID int) (*models.User, error) {
 }
 
 func (r *UserRepository) WinByID(winUserID int, loseUserId int) error {
+	// Update wins and loses by id
 	if _, err := r.store.db.Exec(
 		"UPDATE users SET wins = wins + 1 WHERE user_id = $1", winUserID,
 	); err != nil {
@@ -36,6 +37,17 @@ func (r *UserRepository) WinByID(winUserID int, loseUserId int) error {
 	}
 	if _, err := r.store.db.Exec(
 		"UPDATE users SET loses = loses + 1 WHERE user_id = $1", loseUserId,
+	); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (r *UserRepository) NameByID(userID int, name string) error {
+	// Update name by id
+	if _, err := r.store.db.Exec(
+		"UPDATE users SET user_name = $1 WHERE user_id = $2",
+		name, userID,
 	); err != nil {
 		return err
 	}

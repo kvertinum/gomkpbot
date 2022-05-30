@@ -78,7 +78,12 @@ func (bot *Bot) checkMessageEvent(m *MessageEvent) error {
 			return err
 		}
 
-		answer := fmt.Sprintf("@id%v Вы атаковали. Что будете защищать:", m.UserID)
+		model := duel.Members[m.UserID].Model
+
+		answer := fmt.Sprintf(
+			"[id%v|%s], вы атаковали. Что будете защищать:",
+			m.UserID, model.UserName,
+		)
 		if err := bot.sendAnswer(m, "Вы походили!"); err != nil {
 			return err
 		}
@@ -98,12 +103,12 @@ func (bot *Bot) checkMessageEvent(m *MessageEvent) error {
 			if err := bot.sendAnswer(m, "Дуэль закончилась!"); err != nil {
 				return err
 			}
-			delete(bot.duels, intDuelID)
 			// Finish game
 			firstMemberID := duel.NowWay
 			secondMemberID := duel.AnotherMember
 			firstMember := duel.Members[firstMemberID]
 			secondMember := duel.Members[secondMemberID]
+
 			if firstMember.Attack != secondMember.Protect {
 				firstMember.IsWin = true
 			}
@@ -112,9 +117,12 @@ func (bot *Bot) checkMessageEvent(m *MessageEvent) error {
 			}
 			if firstMember.IsWin && secondMember.IsWin {
 				// Draw
-				return bot.send(m.PeerID, "Победила дружба!")
-			}
-			if firstMember.IsWin {
+				if err := bot.send(
+					m.PeerID, "Игра закончилась. Ничья!",
+				); err != nil {
+					return err
+				}
+			} else if firstMember.IsWin {
 				// Win first member
 				if err := bot.store.User().WinByID(
 					firstMemberID, secondMemberID,
@@ -122,11 +130,13 @@ func (bot *Bot) checkMessageEvent(m *MessageEvent) error {
 					return err
 				}
 				answer := fmt.Sprintf(
-					"Победил: @id%v", firstMemberID,
+					"Игра закончилась. Победил: [id%v|%s]!",
+					firstMemberID, firstMember.Model.UserName,
 				)
-				return bot.send(m.PeerID, answer)
-			}
-			if secondMember.IsWin {
+				if err := bot.send(m.PeerID, answer); err != nil {
+					return err
+				}
+			} else if secondMember.IsWin {
 				// Win second member
 				if err := bot.store.User().WinByID(
 					secondMemberID, firstMemberID,
@@ -134,21 +144,29 @@ func (bot *Bot) checkMessageEvent(m *MessageEvent) error {
 					return err
 				}
 				answer := fmt.Sprintf(
-					"Победил: @id%v", secondMemberID,
+					"Игра закончилась! Победил: [id%v|%s]!",
+					secondMemberID, secondMember.Model.UserName,
 				)
-				return bot.send(m.PeerID, answer)
+				if err := bot.send(m.PeerID, answer); err != nil {
+					return err
+				}
 			}
+			delete(bot.duels, intDuelID)
 			return nil
 		}
 
 		duel.NowWay = duel.AnotherMember
 		duel.AnotherMember = m.UserID
+		model := duel.Members[duel.NowWay].Model
 
 		kjson, err := createAttackKeyboard(intDuelID)
 		if err != nil {
 			log.Fatal(err)
 		}
-		answer := fmt.Sprintf("Вы защитились, теперь атакует: @id%v", duel.NowWay)
+		answer := fmt.Sprintf(
+			"Вы защитились, теперь атакует: [id%v|%s]",
+			duel.NowWay, model.UserName,
+		)
 		if err := bot.sendAnswer(m, "Вы походили!"); err != nil {
 			return err
 		}
@@ -187,7 +205,7 @@ func createDefendKeyboard(duelID int) (string, error) {
 			parts[i], fmt.Sprintf(
 				"{\"way\": \"%v\", \"type\": \"defend\", \"duel_id\": \"%v\"}",
 				i, duelID,
-			), "negative",
+			), "positive",
 		))
 		if i == 2 {
 			k.NewLine()

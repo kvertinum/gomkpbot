@@ -41,15 +41,27 @@ func (p *PayloadRoute) acceptDuel() {
 	}
 	delete(p.bot.waitDuel, p.message.FromID)
 	duelID := len(p.bot.duels) + 1
+
+	firstModel, err := p.bot.store.User().FindByID(userID)
+	if err != nil {
+		log.Fatal(err)
+	}
+	secondModel, err := p.bot.store.User().FindByID(p.message.FromID)
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	p.bot.duels[duelID] = &duel.Duel{
 		Members: map[int]*duel.Member{
 			userID: {
 				Attack:  0,
 				Protect: 0,
+				Model:   firstModel,
 			},
 			p.message.FromID: {
 				Attack:  0,
 				Protect: 0,
+				Model:   secondModel,
 			},
 		},
 		NowWay:        userID,
@@ -61,7 +73,10 @@ func (p *PayloadRoute) acceptDuel() {
 		log.Fatal(err)
 	}
 
-	answer := fmt.Sprintf("Дуэль начинается. Атакует: @id%v", userID)
+	answer := fmt.Sprintf(
+		"Дуэль начинается. Атакует: [id%v|%s]",
+		userID, firstModel.UserName,
+	)
 	if err := p.bot.api.Method("messages.send", map[string]interface{}{
 		"peer_id":   p.message.PeerID,
 		"random_id": 0,

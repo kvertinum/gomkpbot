@@ -79,6 +79,8 @@ func (bot *Bot) checkChat(message vkapi.Message) {
 		route.statCmd()
 	case "/duel":
 		route.duelCmd()
+	case "/name":
+		route.nameCmd()
 	}
 }
 

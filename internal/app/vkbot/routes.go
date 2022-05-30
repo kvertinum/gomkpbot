@@ -80,9 +80,18 @@ func (r *Route) duelCmd() {
 					return
 				}
 				delete(r.bot.waitDuel, waitUserID)
+				userModel, err := r.bot.store.User().FindByID(userID)
+				if err != nil {
+					log.Fatal(err)
+				}
+				waitUserModel, err := r.bot.store.User().FindByID(waitUserID)
+				if err != nil {
+					log.Fatal(err)
+				}
 				message := fmt.Sprintf(
-					"@id%v, пользователь @id%v не принял дуэль в течении минуты и она отменяется",
-					userID, waitUserID,
+					"[id%v|%s], пользователь [id%v|%s] не принял дуэль в течении минуты и она отменяется",
+					userID, userModel.UserName,
+					waitUserID, waitUserModel.UserName,
 				)
 				if err := r.bot.send(peerID, message); err != nil {
 					log.Fatal(err)
@@ -114,6 +123,37 @@ func (r *Route) duelCmd() {
 			"message":   waitDuelMsg,
 			"keyboard":  kjson,
 		}, nil); err != nil {
+			log.Fatal(err)
+		}
+	} else {
+		r.sendNeedArgs()
+	}
+}
+
+func (r *Route) nameCmd() {
+	// Change user name
+	if r.cmdValues != nil {
+		// Check value lenght
+		if len(r.cmdValues[0]) > 15 {
+			if err := r.bot.send(
+				r.message.PeerID, "Имя должно быть не больше 15 симвволов",
+			); err != nil {
+				log.Fatal(err)
+			}
+			return
+		}
+
+		// Update in database
+		if err := r.bot.store.User().NameByID(
+			r.message.FromID, r.cmdValues[0],
+		); err != nil {
+			log.Fatal(err)
+		}
+
+		answer := fmt.Sprintf("Вы сменили своё имя на %s", r.cmdValues[0])
+		if err := r.bot.send(
+			r.message.PeerID, answer,
+		); err != nil {
 			log.Fatal(err)
 		}
 	} else {
