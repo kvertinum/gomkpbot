@@ -53,18 +53,8 @@ func (p *PayloadRoute) acceptDuel() {
 
 	p.bot.duels[duelID] = &duel.Duel{
 		Members: map[int]*duel.Member{
-			userID: {
-				Attacked: false,
-				Attack:   0,
-				Protect:  0,
-				Model:    firstModel,
-			},
-			p.message.FromID: {
-				Attacked: false,
-				Attack:   0,
-				Protect:  0,
-				Model:    secondModel,
-			},
+			userID:           duel.NewMember(firstModel),
+			p.message.FromID: duel.NewMember(secondModel),
 		},
 		NowWay:        userID,
 		AnotherMember: p.message.FromID,

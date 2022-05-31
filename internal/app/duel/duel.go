@@ -6,8 +6,19 @@ type Member struct {
 	Attacked bool
 	Attack   int
 	Protect  int
+	Health   int
 	IsWin    bool
 	Model    *models.User
+}
+
+func NewMember(model *models.User) *Member {
+	return &Member{
+		Attacked: false,
+		Attack:   0,
+		Protect:  0,
+		Health:   3, // реализовать
+		Model:    model,
+	}
 }
 
 type Duel struct {

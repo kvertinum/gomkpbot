@@ -105,7 +105,7 @@ func (bot *Bot) checkMessageEvent(m *MessageEvent) error {
 		duel.Ways += 1
 
 		if duel.Ways == 2 {
-			if err := bot.sendAnswer(m, "Дуэль закончилась!"); err != nil {
+			if err := bot.sendAnswer(m, "Раунд закончился!"); err != nil {
 				return err
 			}
 			// Finish game
@@ -120,44 +120,74 @@ func (bot *Bot) checkMessageEvent(m *MessageEvent) error {
 			if firstMember.Protect != secondMember.Attack {
 				secondMember.IsWin = true
 			}
-			if firstMember.IsWin && secondMember.IsWin {
+			if (!firstMember.IsWin && !secondMember.IsWin) || (firstMember.IsWin && secondMember.IsWin) {
 				// Draw
 				if err := bot.send(
-					m.PeerID, "Игра закончилась. Ничья!",
+					m.PeerID, "Раунд закончился ничьей!",
 				); err != nil {
 					return err
 				}
 			} else if firstMember.IsWin {
 				// Win first member
-				if err := bot.store.User().WinByID(
-					firstMemberID, secondMemberID,
-				); err != nil {
-					return err
-				}
+				secondMember.Health -= 1
 				answer := fmt.Sprintf(
-					"Игра закончилась. Победил: [id%v|%s]!",
+					`Раунд закончился. Победил: [id%v|%s]!
+					[id%v|%s] %v hp
+					[id%v|%s] %v hp`,
 					firstMemberID, firstMember.Model.UserName,
+					firstMemberID, firstMember.Model.UserName, firstMember.Health,
+					secondMemberID, secondMember.Model.UserName, secondMember.Health,
 				)
 				if err := bot.send(m.PeerID, answer); err != nil {
 					return err
 				}
 			} else if secondMember.IsWin {
 				// Win second member
-				if err := bot.store.User().WinByID(
-					secondMemberID, firstMemberID,
-				); err != nil {
-					return err
-				}
+				firstMember.Health -= 1
 				answer := fmt.Sprintf(
-					"Игра закончилась! Победил: [id%v|%s]!",
+					`Раунд закончился. Победил: [id%v|%s]!
+					[id%v|%s] %v hp
+					[id%v|%s] %v hp`,
 					secondMemberID, secondMember.Model.UserName,
+					secondMemberID, secondMember.Model.UserName, secondMember.Health,
+					firstMemberID, firstMember.Model.UserName, firstMember.Health,
 				)
 				if err := bot.send(m.PeerID, answer); err != nil {
 					return err
 				}
 			}
-			delete(bot.duels, intDuelID)
-			return nil
+			if secondMember.Health == 0 || firstMember.Health == 0 {
+				if firstMember.Health == 0 {
+					if err := bot.store.User().WinByID(
+						secondMemberID, firstMemberID,
+					); err != nil {
+						return err
+					}
+					answer := fmt.Sprintf(
+						"Игра закончилась! Победил: [id%v|%s]!",
+						secondMemberID, secondMember.Model.UserName,
+					)
+					if err := bot.send(m.PeerID, answer); err != nil {
+						return err
+					}
+				} else if secondMember.Health == 0 {
+					if err := bot.store.User().WinByID(
+						firstMemberID, secondMemberID,
+					); err != nil {
+						return err
+					}
+					answer := fmt.Sprintf(
+						"Игра закончилась. Победил: [id%v|%s]!",
+						firstMemberID, firstMember.Model.UserName,
+					)
+					if err := bot.send(m.PeerID, answer); err != nil {
+						return err
+					}
+				}
+				delete(bot.duels, intDuelID)
+				return nil
+			}
+			duel.Ways = 0
 		}
 
 		duel.NowWay = duel.AnotherMember
