@@ -83,21 +83,16 @@ func createAttackKeyboard(duelID int) (string, error) {
 	parts := map[int]string{
 		1: "Голова",
 		2: "Живот",
-		3: "Руки",
-		4: "Ноги",
 	}
 
 	k := vkapi.NewKeyboard(false, true)
-	for i := 1; i <= 4; i++ {
+	for i := 1; i <= 2; i++ {
 		k.Add(vkapi.NewCallbackButton(
 			parts[i], fmt.Sprintf(
 				"{\"way\": \"%v\", \"type\": \"attack\", \"duel_id\": \"%v\"}",
 				i, duelID,
 			), "negative",
 		))
-		if i == 2 {
-			k.NewLine()
-		}
 	}
 	k.NewLine()
 	return k.GetJson()

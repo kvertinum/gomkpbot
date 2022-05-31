@@ -100,6 +100,9 @@ func (bot *Bot) checkMessageEvent(m *MessageEvent) error {
 		}, nil)
 
 	case "defend":
+		if !duel.Members[m.UserID].Attacked {
+			return nil
+		}
 		// Do defend
 		duel.Members[m.UserID].Protect = intWay
 		duel.Ways += 1
@@ -113,14 +116,13 @@ func (bot *Bot) checkMessageEvent(m *MessageEvent) error {
 			secondMemberID := duel.AnotherMember
 			firstMember := duel.Members[firstMemberID]
 			secondMember := duel.Members[secondMemberID]
-
 			if firstMember.Attack != secondMember.Protect {
 				firstMember.IsWin = true
 			}
 			if firstMember.Protect != secondMember.Attack {
 				secondMember.IsWin = true
 			}
-			if (!firstMember.IsWin && !secondMember.IsWin) || (firstMember.IsWin && secondMember.IsWin) {
+			if (firstMember.IsWin && secondMember.IsWin) || (!firstMember.IsWin && !secondMember.IsWin) {
 				// Draw
 				if err := bot.send(
 					m.PeerID, "Раунд закончился ничьей!",
@@ -188,6 +190,8 @@ func (bot *Bot) checkMessageEvent(m *MessageEvent) error {
 				return nil
 			}
 			duel.Ways = 0
+			firstMember.IsWin = false
+			secondMember.IsWin = false
 		}
 
 		duel.NowWay = duel.AnotherMember
@@ -232,21 +236,16 @@ func createDefendKeyboard(duelID int) (string, error) {
 	parts := map[int]string{
 		1: "Голова",
 		2: "Живот",
-		3: "Руки",
-		4: "Ноги",
 	}
 
 	k := vkapi.NewKeyboard(false, true)
-	for i := 1; i <= 4; i++ {
+	for i := 1; i <= 2; i++ {
 		k.Add(vkapi.NewCallbackButton(
 			parts[i], fmt.Sprintf(
 				"{\"way\": \"%v\", \"type\": \"defend\", \"duel_id\": \"%v\"}",
 				i, duelID,
 			), "positive",
 		))
-		if i == 2 {
-			k.NewLine()
-		}
 	}
 	k.NewLine()
 	return k.GetJson()
