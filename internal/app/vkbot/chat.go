@@ -30,7 +30,7 @@ func (bot *Bot) checkChat(message vkapi.Message) {
 	}
 
 	// Checking the existence of user in the database
-	model, err := bot.store.User().FindByID(message.FromID)
+	model, err := bot.store.User().FindByID(message.PeerID, message.FromID)
 	if err != nil {
 		model, err = bot.checkDbErr(err, message.FromID, message.PeerID)
 		if err != nil {

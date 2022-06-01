@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"log"
 	"strconv"
-
-	"github.com/Kvertinum01/gomkpbot/internal/app/vkapi"
 )
 
 type MessageEvent struct {
@@ -76,7 +74,7 @@ func (bot *Bot) checkMessageEvent(m *MessageEvent) error {
 		// Do attack
 		duel.Members[m.UserID].Attack = intWay
 
-		kjson, err := createDefendKeyboard(intDuelID)
+		kjson, err := createKeyboard(intDuelID, "defend")
 		if err != nil {
 			return err
 		}
@@ -161,7 +159,7 @@ func (bot *Bot) checkMessageEvent(m *MessageEvent) error {
 			if secondMember.Health == 0 || firstMember.Health == 0 {
 				if firstMember.Health == 0 {
 					if err := bot.store.User().WinByID(
-						secondMemberID, firstMemberID,
+						m.PeerID, secondMemberID, firstMemberID,
 					); err != nil {
 						return err
 					}
@@ -174,7 +172,7 @@ func (bot *Bot) checkMessageEvent(m *MessageEvent) error {
 					}
 				} else if secondMember.Health == 0 {
 					if err := bot.store.User().WinByID(
-						firstMemberID, secondMemberID,
+						m.PeerID, firstMemberID, secondMemberID,
 					); err != nil {
 						return err
 					}
@@ -200,7 +198,7 @@ func (bot *Bot) checkMessageEvent(m *MessageEvent) error {
 
 		duel.Members[m.UserID].Attacked = false
 
-		kjson, err := createAttackKeyboard(intDuelID)
+		kjson, err := createKeyboard(intDuelID, "attack")
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -229,24 +227,4 @@ func (bot *Bot) sendAnswer(m *MessageEvent, event_data string) error {
 		"peer_id":    m.PeerID,
 		"event_data": showSnackbar(event_data),
 	}, nil)
-}
-
-func createDefendKeyboard(duelID int) (string, error) {
-	// Create defend keyboard
-	parts := map[int]string{
-		1: "Голова",
-		2: "Живот",
-	}
-
-	k := vkapi.NewKeyboard(false, true)
-	for i := 1; i <= 2; i++ {
-		k.Add(vkapi.NewCallbackButton(
-			parts[i], fmt.Sprintf(
-				"{\"way\": \"%v\", \"type\": \"defend\", \"duel_id\": \"%v\"}",
-				i, duelID,
-			), "positive",
-		))
-	}
-	k.NewLine()
-	return k.GetJson()
 }

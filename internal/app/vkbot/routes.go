@@ -81,11 +81,15 @@ func (r *Route) duelCmd() {
 				return
 			}
 			delete(r.bot.waitDuel, waitUserID)
-			userModel, err := r.bot.store.User().FindByID(userID)
+			userModel, err := r.bot.store.User().FindByID(
+				peerID, userID,
+			)
 			if err != nil {
 				log.Fatal(err)
 			}
-			waitUserModel, err := r.bot.store.User().FindByID(waitUserID)
+			waitUserModel, err := r.bot.store.User().FindByID(
+				peerID, waitUserID,
+			)
 			if err != nil {
 				log.Fatal(err)
 			}
@@ -145,7 +149,7 @@ func (r *Route) nameCmd() {
 
 		// Update in database
 		if err := r.bot.store.User().NameByID(
-			r.message.FromID, r.cmdValues[0],
+			r.message.PeerID, r.message.FromID, r.cmdValues[0],
 		); err != nil {
 			log.Fatal(err)
 		}

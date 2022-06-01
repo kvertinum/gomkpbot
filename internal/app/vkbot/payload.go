@@ -15,6 +15,7 @@ type PayloadRoute struct {
 }
 
 func (p *PayloadRoute) checkPayload() {
+	// Check payload
 	cmd, ok := p.payload["cmd"]
 	if !ok {
 		if err := p.bot.send(
@@ -30,8 +31,10 @@ func (p *PayloadRoute) checkPayload() {
 }
 
 func (p *PayloadRoute) acceptDuel() {
+	// Accept duel
 	userID, ok := p.bot.waitDuel[p.message.FromID]
 	if !ok {
+		// Check user id
 		if err := p.bot.send(
 			p.message.PeerID, "Вы не являетесь соперником",
 		); err != nil {
@@ -39,18 +42,25 @@ func (p *PayloadRoute) acceptDuel() {
 		}
 		return
 	}
+	// Start duel
 	delete(p.bot.waitDuel, p.message.FromID)
 	duelID := len(p.bot.duels) + 1
 
-	firstModel, err := p.bot.store.User().FindByID(userID)
+	// Get models
+	firstModel, err := p.bot.store.User().FindByID(
+		p.message.PeerID, p.message.FromID,
+	)
 	if err != nil {
 		log.Fatal(err)
 	}
-	secondModel, err := p.bot.store.User().FindByID(p.message.FromID)
+	secondModel, err := p.bot.store.User().FindByID(
+		p.message.PeerID, p.message.FromID,
+	)
 	if err != nil {
 		log.Fatal(err)
 	}
 
+	// Add duel to bot.duels
 	p.bot.duels[duelID] = &duel.Duel{
 		Members: map[int]*duel.Member{
 			userID:           duel.NewMember(firstModel),
@@ -60,11 +70,14 @@ func (p *PayloadRoute) acceptDuel() {
 		AnotherMember: p.message.FromID,
 		Ways:          0,
 	}
-	kjson, err := createAttackKeyboard(duelID)
+
+	// Create keyboard
+	kjson, err := createKeyboard(duelID, "attack")
 	if err != nil {
 		log.Fatal(err)
 	}
 
+	// Start duel
 	answer := fmt.Sprintf(
 		"Дуэль начинается. Атакует: [id%v|%s]",
 		userID, firstModel.UserName,
@@ -79,7 +92,8 @@ func (p *PayloadRoute) acceptDuel() {
 	}
 }
 
-func createAttackKeyboard(duelID int) (string, error) {
+func createKeyboard(duelID int, wayType string) (string, error) {
+	// Creaate keyboard to attack
 	parts := map[int]string{
 		1: "Голова",
 		2: "Живот",
@@ -89,8 +103,8 @@ func createAttackKeyboard(duelID int) (string, error) {
 	for i := 1; i <= 2; i++ {
 		k.Add(vkapi.NewCallbackButton(
 			parts[i], fmt.Sprintf(
-				"{\"way\": \"%v\", \"type\": \"attack\", \"duel_id\": \"%v\"}",
-				i, duelID,
+				"{\"way\": \"%v\", \"type\": \"%s\", \"duel_id\": \"%v\"}",
+				i, wayType, duelID,
 			), "negative",
 		))
 	}
