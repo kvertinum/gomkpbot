@@ -1,6 +1,8 @@
 package vkbot
 
 import (
+	"log"
+
 	"github.com/Kvertinum01/gomkpbot/internal/app/duel"
 	"github.com/Kvertinum01/gomkpbot/internal/app/store"
 	"github.com/Kvertinum01/gomkpbot/internal/app/vkapi"
@@ -18,6 +20,7 @@ type Bot struct {
 func SetupBot(config *Config) error {
 	// Init Api struct
 	api := vkapi.NewApi(config.Token)
+
 	// Init Bot struct
 	bot := &Bot{
 		api:      api,
@@ -26,6 +29,7 @@ func SetupBot(config *Config) error {
 		duels:    make(map[int]*duel.Duel),
 		waitDuel: make(map[int]int),
 	}
+
 	// Init Longpoll struct
 	lp, err := vkapi.NewLongpoll(api, config.GroupID)
 	if err != nil {
@@ -64,12 +68,28 @@ func (bot *Bot) configureStore() error {
 }
 
 func (bot *Bot) checkMessage(message vkapi.Message) {
+	// Check message
 	if message.PeerID >= 2000000000 {
 		bot.checkChat(message)
 	}
 }
 
+func (bot *Bot) checkEvent(event vkapi.LongpollMessage) {
+	// Check mesage event
+	switch event.Type {
+	case "message_event":
+		m := &MessageEvent{}
+		if err := bot.convertMap(event.Object, &m); err != nil {
+			log.Fatal(err)
+		}
+		if err := bot.checkMessageEvent(m); err != nil {
+			log.Fatal(err)
+		}
+	}
+}
+
 func (bot *Bot) send(peerID int, message string) error {
+	// Send message
 	return bot.api.Method("messages.send", map[string]interface{}{
 		"peer_id":   peerID,
 		"random_id": 0,

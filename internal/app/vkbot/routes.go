@@ -74,28 +74,28 @@ func (r *Route) duelCmd() {
 		// Start timer
 		go func(userID int, waitUserID, peerID int) {
 			timer := time.NewTimer(time.Minute)
-			for range timer.C {
-				_, ok := r.bot.waitDuel[waitUserID]
-				if !ok {
-					return
-				}
-				delete(r.bot.waitDuel, waitUserID)
-				userModel, err := r.bot.store.User().FindByID(userID)
-				if err != nil {
-					log.Fatal(err)
-				}
-				waitUserModel, err := r.bot.store.User().FindByID(waitUserID)
-				if err != nil {
-					log.Fatal(err)
-				}
-				message := fmt.Sprintf(
-					"[id%v|%s], пользователь [id%v|%s] не принял дуэль в течении минуты и она отменяется",
-					userID, userModel.UserName,
-					waitUserID, waitUserModel.UserName,
-				)
-				if err := r.bot.send(peerID, message); err != nil {
-					log.Fatal(err)
-				}
+			<-timer.C
+
+			_, ok := r.bot.waitDuel[waitUserID]
+			if !ok {
+				return
+			}
+			delete(r.bot.waitDuel, waitUserID)
+			userModel, err := r.bot.store.User().FindByID(userID)
+			if err != nil {
+				log.Fatal(err)
+			}
+			waitUserModel, err := r.bot.store.User().FindByID(waitUserID)
+			if err != nil {
+				log.Fatal(err)
+			}
+			message := fmt.Sprintf(
+				"[id%v|%s], пользователь [id%v|%s] не принял дуэль в течении минуты и она отменяется",
+				userID, userModel.UserName,
+				waitUserID, waitUserModel.UserName,
+			)
+			if err := r.bot.send(peerID, message); err != nil {
+				log.Fatal(err)
 			}
 		}(
 			r.message.FromID,

@@ -16,7 +16,7 @@ func NewMember(model *models.User) *Member {
 		Attacked: false,
 		Attack:   0,
 		Protect:  0,
-		Health:   3, // реализовать
+		Health:   3,
 		Model:    model,
 	}
 }

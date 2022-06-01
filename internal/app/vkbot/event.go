@@ -250,17 +250,3 @@ func createDefendKeyboard(duelID int) (string, error) {
 	k.NewLine()
 	return k.GetJson()
 }
-
-func (bot *Bot) checkEvent(event vkapi.LongpollMessage) {
-	// Check mesage event
-	switch event.Type {
-	case "message_event":
-		m := &MessageEvent{}
-		if err := bot.convertMap(event.Object, &m); err != nil {
-			log.Fatal(err)
-		}
-		if err := bot.checkMessageEvent(m); err != nil {
-			log.Fatal(err)
-		}
-	}
-}
